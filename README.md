@@ -4,16 +4,24 @@ A high-performance, ultra-responsive Bluetooth Low Energy (BLE) HID trackpad and
 
 ---
 
-## ⚡ Features
+## ⚡ Features & Gestures
 
-- **Multi-Touch Trackpad Surface**:
-  - Full-screen capacitive trackpad navigation utilizing the FT6336U touch controller (entire 320x240 screen area).
-  - Tap-to-click gesture support with crisp haptic vibration motor confirmation.
+- **Full-Screen Multi-Touch Trackpad Surface**:
+  - Full-screen capacitive trackpad navigation utilizing the FT6336U touch controller (entire 320x240 LCD area).
   - Kinetic acceleration curve with anti-jitter deadband filtering for silky-smooth cursor movement.
-  - Clean cyberpunk HUD optimized for zero drawing lag or trace artifacts.
-- **Physical Touch Button Mapping** (Core2 Front Touch Panel):
-  - **Button A (Left)**: Left Mouse Click (with haptic feedback vibration).
-  - **Button C (Right)**: Right Mouse Click (with haptic feedback vibration).
+  - Zero drawing lag and no tracking traces on display for optimal 120Hz polling performance.
+
+- **Laptop Trackpad Gestures**:
+  - **1-Finger Drag**: Smooth cursor navigation with kinetic velocity curve.
+  - **1-Finger Tap**: Left Mouse Click (`bleMouse.click(MOUSE_LEFT)`) with 20ms haptic feedback.
+  - **Double-Tap & Drag**: Tap then quickly tap-and-hold to drag windows, select text, or move objects with Left Click held down. Automatically releases on finger lift with haptic pulse.
+  - **2-Finger Scroll**: Natural two-finger vertical and horizontal scrolling (`bleMouse.move(0, 0, wheel, hWheel)`).
+  - **2-Finger Tap**: Right Mouse Click (`bleMouse.click(MOUSE_RIGHT)`) with distinct 30ms haptic confirmation.
+  - **Anti-Phantom Multi-Touch Filter**: Intelligent cooldown prevents false single-finger clicks or cursor jumps when lifting two fingers.
+
+- **Physical Touch Button Mapping** (Core2 Front Bezel):
+  - **Button A (Left)**: Physical Left Mouse Click (with haptic feedback vibration).
+  - **Button C (Right)**: Physical Right Mouse Click (with haptic feedback vibration).
   - **Button B (Center)**:
     - **Long Press (> 750ms)**: Enters the **System Settings Matrix** with an animated charging progress bar.
     - **Short Tap**: Middle Mouse Click.
@@ -97,8 +105,34 @@ All configuration parameters are consolidated in [Config.h](file:///C:/Users/Asw
 | `BLE_DEVICE_NAME` | `"Core2-Trackpad"` | Advertised Bluetooth device name |
 | `DEFAULT_SENSITIVITY` | `2.2f` | Cursor tracking speed multiplier |
 | `ACCEL_FACTOR` | `1.6f` | Kinetic acceleration multiplier for fast swipes |
-| `BTN_HOLD_SETTINGS_MS`| `750` | Long-press duration (ms) to open Settings |
 | `DEAD_ZONE_PX` | `1` | Anti-jitter deadband threshold in pixels |
+| `TAP_MAX_DURATION_MS` | `250` | Maximum touch duration (ms) for tap detection |
+| `TAP_MAX_DISTANCE_PX` | `8` | Maximum movement radius (px) permitted during tap |
+| `TAP_TO_DRAG_TIMEOUT_MS` | `300` | Double-tap interval (ms) to trigger Left Click drag |
+| `SCROLL_SENSITIVITY` | `0.22f` | Two-finger scroll rate multiplier |
+| `SCROLL_INVERT` | `false` | Traditional vs natural two-finger scroll inversion |
+| `TWO_FINGER_TAP_MS` | `250` | Two-finger tap duration (ms) for Right Click |
+| `MULTITOUCH_COOLDOWN_MS` | `120` | Cooldown to filter residual single-finger touch on 2-finger release |
+| `BTN_HOLD_SETTINGS_MS`| `750` | Long-press duration (ms) on Button B to open Settings |
+
+---
+
+## 📜 Version & Feature Changelog
+
+### v2.5.0 - Laptop Trackpad Gestures & Full-Screen Touch
+- **Added 2-Finger Scrolling**: Smooth vertical & horizontal scrolling using natural two-finger swipe gestures.
+- **Added 2-Finger Tap for Right-Click**: Tap with two fingers anywhere on the trackpad to trigger a Right Click with a 30ms haptic buzz.
+- **Added Double-Tap & Drag (Tap to Drag)**: Tap once, tap again and hold to drag windows, select text, or move files with Left Click held down. Automatically releases on finger lift with haptic feedback.
+- **Added Anti-Phantom Cooldown**: Filters out residual single-finger touch artifacts when lifting two fingers to prevent accidental clicks or cursor jumps.
+- **Expanded Full-Screen Touch Area**: Active trackpad area expanded to cover the entire 320x240 LCD display (`y: 0..240`).
+- **Removed Tracking Trace Printing**: Removed reticle drawing during cursor movements for zero drawing lag and clean UI.
+- **Added Tap-to-Click**: Quick single finger tap triggers Left Click with a 20ms haptic vibration pulse.
+
+### v2.4.0 - Initial Release
+- Core BLE HID mouse implementation on ESP32 Core2.
+- Cyberpunk HUD with telemetry (battery %, voltage, BLE status, sensitivity).
+- System settings screen with Bluetooth toggle and safe PMU power off.
+- Physical touch button mapping for Button A (Left Click), Button B (Center/Settings), and Button C (Right Click).
 
 ---
 

@@ -14,7 +14,7 @@ AppMode currentMode = MODE_TRACKPAD;
 bool bleEnabled = true;
 bool lastBleConnectionState = false;
 
-// Touch tracking & Tap-to-click state
+// Touch tracking & Laptop Trackpad Gestures
 int lastTouchX = -1;
 int lastTouchY = -1;
 int touchStartX = -1;
@@ -22,6 +22,22 @@ int touchStartY = -1;
 uint32_t touchStartTime = 0;
 bool isFingerDown = false;
 bool hasMovedBeyondTap = false;
+
+// Double-Tap & Drag
+uint32_t lastTapReleaseTime = 0;
+bool isDragging = false;
+
+// 2-Finger Scroll & 2-Finger Tap (Right Click)
+bool isTwoFingerDown = false;
+int lastScrollX = -1;
+int lastScrollY = -1;
+int twoFingerStartX = -1;
+int twoFingerStartY = -1;
+uint32_t twoFingerStartTime = 0;
+bool twoFingerMoved = false;
+float scrollAccumulatorY = 0.0f;
+float scrollAccumulatorX = 0.0f;
+uint32_t lastTwoFingerReleaseTime = 0;
 
 // Center Button B Hold Tracker
 uint32_t btnB_pressStartTime = 0;
@@ -91,6 +107,18 @@ void switchToMode(AppMode newMode) {
         touchStartTime = 0;
         isFingerDown = false;
         hasMovedBeyondTap = false;
+        isDragging = false;
+        lastTapReleaseTime = 0;
+        isTwoFingerDown = false;
+        lastScrollX = -1;
+        lastScrollY = -1;
+        twoFingerStartX = -1;
+        twoFingerStartY = -1;
+        twoFingerStartTime = 0;
+        twoFingerMoved = false;
+        scrollAccumulatorY = 0.0f;
+        scrollAccumulatorX = 0.0f;
+        lastTwoFingerReleaseTime = 0;
     } else if (currentMode == MODE_SETTINGS) {
         updateBatteryTelemetry();
         CyberUI::drawSettingsScreen(bleEnabled, bleMouse.isConnected(), btMacStr, currentBatPct, currentBatVolt);
@@ -127,42 +155,141 @@ void toggleBluetooth() {
 }
 
 // =============================================================================
-// TRACKPAD INPUT ENGINE (FULL SCREEN TOUCH + TAP-TO-CLICK)
+// TRACKPAD INPUT ENGINE (FULL SCREEN TOUCH + LAPTOP GESTURES)
 // =============================================================================
 void handleTrackpadTouch() {
-    Point p = M5.Touch.getPressPoint();
-    bool touchDown = (p.x >= 0 && p.y >= 0);
+    uint8_t touchCount = M5.Touch.points;
+    Point p0 = M5.Touch.point[0];
+    Point p1 = M5.Touch.point[1];
+
+    // -------------------------------------------------------------------------
+    // 1. TWO-FINGER GESTURES (2-FINGER SCROLL & 2-FINGER TAP TO RIGHT-CLICK)
+    // -------------------------------------------------------------------------
+    if (touchCount >= 2 && p0.y < TRACKPAD_Y_MAX && p1.y < TRACKPAD_Y_MAX) {
+        // Cancel active 1-finger drag/move
+        if (isDragging) {
+            if (bleMouse.isConnected()) {
+                bleMouse.release(MOUSE_LEFT);
+            }
+            isDragging = false;
+        }
+        isFingerDown = false;
+        lastTouchX = -1;
+        lastTouchY = -1;
+
+        int avgX = (p0.x + p1.x) / 2;
+        int avgY = (p0.y + p1.y) / 2;
+
+        if (!isTwoFingerDown) {
+            isTwoFingerDown = true;
+            twoFingerStartX = avgX;
+            twoFingerStartY = avgY;
+            lastScrollX = avgX;
+            lastScrollY = avgY;
+            twoFingerStartTime = millis();
+            twoFingerMoved = false;
+            scrollAccumulatorY = 0.0f;
+            scrollAccumulatorX = 0.0f;
+        } else {
+            int dx = avgX - lastScrollX;
+            int dy = avgY - lastScrollY;
+
+            int totalDx = avgX - twoFingerStartX;
+            int totalDy = avgY - twoFingerStartY;
+            if ((totalDx * totalDx + totalDy * totalDy) > (TWO_FINGER_MAX_DIST_PX * TWO_FINGER_MAX_DIST_PX)) {
+                twoFingerMoved = true;
+            }
+
+            // Accumulate scroll movements
+            scrollAccumulatorY += (float)dy * SCROLL_SENSITIVITY;
+            scrollAccumulatorX += (float)dx * SCROLL_SENSITIVITY;
+
+            int scrollStepsY = (int)scrollAccumulatorY;
+            int scrollStepsX = (int)scrollAccumulatorX;
+
+            if (scrollStepsY != 0 || scrollStepsX != 0) {
+                scrollAccumulatorY -= scrollStepsY;
+                scrollAccumulatorX -= scrollStepsX;
+
+                if (bleMouse.isConnected()) {
+                    signed char wheel = SCROLL_INVERT ? (signed char)scrollStepsY : (signed char)(-scrollStepsY);
+                    signed char hWheel = (signed char)scrollStepsX;
+                    bleMouse.move(0, 0, wheel, hWheel);
+                }
+            }
+
+            lastScrollX = avgX;
+            lastScrollY = avgY;
+        }
+        return;
+    }
+
+    // Handle two-finger release
+    if (isTwoFingerDown && touchCount < 2) {
+        uint32_t twoFingerDuration = millis() - twoFingerStartTime;
+
+        // 2-Finger Tap = Right Click
+        if (!twoFingerMoved && 
+            twoFingerDuration >= TAP_MIN_DURATION_MS && 
+            twoFingerDuration <= TWO_FINGER_TAP_MS) {
+            if (bleMouse.isConnected()) {
+                bleMouse.click(MOUSE_RIGHT);
+            }
+            triggerHaptic(30);
+        }
+
+        isTwoFingerDown = false;
+        scrollAccumulatorY = 0.0f;
+        scrollAccumulatorX = 0.0f;
+        lastTwoFingerReleaseTime = millis();
+    }
+
+    // Cooldown after 2-finger gesture to prevent phantom 1-finger click or jumps
+    if (millis() - lastTwoFingerReleaseTime < MULTITOUCH_COOLDOWN_MS) {
+        return;
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. ONE-FINGER GESTURES (MOVE, TAP-TO-CLICK, DOUBLE-TAP & DRAG)
+    // -------------------------------------------------------------------------
+    bool touchDown = (touchCount == 1 && p0.x >= 0 && p0.y >= 0);
 
     if (touchDown) {
-        // Full screen trackpad touch area (0 <= x < SCREEN_WIDTH, TRACKPAD_Y_MIN <= y < TRACKPAD_Y_MAX)
-        if (p.x >= 0 && p.x < SCREEN_WIDTH && p.y >= TRACKPAD_Y_MIN && p.y < TRACKPAD_Y_MAX) {
+        if (p0.x >= 0 && p0.x < SCREEN_WIDTH && p0.y >= TRACKPAD_Y_MIN && p0.y < TRACKPAD_Y_MAX) {
             if (!isFingerDown) {
-                // Initial touch down
                 isFingerDown = true;
-                lastTouchX = p.x;
-                lastTouchY = p.y;
-                touchStartX = p.x;
-                touchStartY = p.y;
+                lastTouchX = p0.x;
+                lastTouchY = p0.y;
+                touchStartX = p0.x;
+                touchStartY = p0.y;
                 touchStartTime = millis();
                 hasMovedBeyondTap = false;
-            } else {
-                // Continuous drag movement
-                int dx = p.x - lastTouchX;
-                int dy = p.y - lastTouchY;
 
-                // Track total displacement from initial touch point to distinguish tap vs drag
-                int totalDx = p.x - touchStartX;
-                int totalDy = p.y - touchStartY;
+                // Check for Double-Tap & Drag
+                uint32_t timeSinceLastTap = millis() - lastTapReleaseTime;
+                if (timeSinceLastTap < TAP_TO_DRAG_TIMEOUT_MS) {
+                    isDragging = true;
+                    if (bleMouse.isConnected()) {
+                        bleMouse.press(MOUSE_LEFT);
+                    }
+                    triggerHaptic(25);
+                } else {
+                    isDragging = false;
+                }
+            } else {
+                int dx = p0.x - lastTouchX;
+                int dy = p0.y - lastTouchY;
+
+                int totalDx = p0.x - touchStartX;
+                int totalDy = p0.y - touchStartY;
                 if ((totalDx * totalDx + totalDy * totalDy) > (TAP_MAX_DISTANCE_PX * TAP_MAX_DISTANCE_PX)) {
                     hasMovedBeyondTap = true;
                 }
 
-                // Deadband filter to prevent idle jitter
                 if (abs(dx) >= DEAD_ZONE_PX || abs(dy) >= DEAD_ZONE_PX) {
                     float dist = sqrtf((float)(dx * dx + dy * dy));
                     float speedMultiplier = DEFAULT_SENSITIVITY;
 
-                    // Cyberpunk kinetic acceleration curve
                     if (dist > ACCEL_THRESHOLD) {
                         speedMultiplier *= ACCEL_FACTOR;
                     }
@@ -174,23 +301,36 @@ void handleTrackpadTouch() {
                         bleMouse.move(moveX, moveY);
                     }
 
-                    lastTouchX = p.x;
-                    lastTouchY = p.y;
+                    lastTouchX = p0.x;
+                    lastTouchY = p0.y;
                 }
             }
         }
     } else {
         if (isFingerDown) {
-            uint32_t pressDuration = millis() - touchStartTime;
-
-            // Tap-to-click detection (short touch without significant drag)
-            if (!hasMovedBeyondTap && 
-                pressDuration >= TAP_MIN_DURATION_MS && 
-                pressDuration <= TAP_MAX_DURATION_MS) {
+            if (isDragging) {
+                // End of Tap-to-Drag
                 if (bleMouse.isConnected()) {
-                    bleMouse.click(MOUSE_LEFT);
+                    bleMouse.release(MOUSE_LEFT);
                 }
-                triggerHaptic(20);
+                isDragging = false;
+                lastTapReleaseTime = 0;
+                triggerHaptic(15);
+            } else {
+                uint32_t pressDuration = millis() - touchStartTime;
+
+                // Single Tap = Left Click
+                if (!hasMovedBeyondTap && 
+                    pressDuration >= TAP_MIN_DURATION_MS && 
+                    pressDuration <= TAP_MAX_DURATION_MS) {
+                    if (bleMouse.isConnected()) {
+                        bleMouse.click(MOUSE_LEFT);
+                    }
+                    triggerHaptic(20);
+                    lastTapReleaseTime = millis();
+                } else {
+                    lastTapReleaseTime = 0;
+                }
             }
 
             isFingerDown = false;

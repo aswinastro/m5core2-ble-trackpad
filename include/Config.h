@@ -27,10 +27,16 @@
 #define ACCEL_FACTOR           1.6f     // Acceleration multiplier for rapid flicks
 #define DEAD_ZONE_PX           1        // Ignores micro-jitter less than 1px
 
-// Tap-to-Click Tuning
-#define TAP_MAX_DURATION_MS    250      // Max press duration for tap detection (ms)
-#define TAP_MIN_DURATION_MS    25       // Min duration to reject electrical noise (ms)
-#define TAP_MAX_DISTANCE_PX    8        // Max movement radius allowed for a tap (px)
+// Laptop Trackpad Feature Configurations
+#define TAP_MAX_DURATION_MS     250      // Max press duration for tap detection (ms)
+#define TAP_MIN_DURATION_MS     25       // Min duration to reject electrical noise (ms)
+#define TAP_MAX_DISTANCE_PX     8        // Max movement radius allowed for a tap (px)
+#define TAP_TO_DRAG_TIMEOUT_MS  300      // Max interval between 1st tap release and 2nd tap down for drag (ms)
+#define SCROLL_SENSITIVITY      0.22f    // Multiplier for 2-finger scroll steps
+#define SCROLL_INVERT           false    // false: traditional (finger down scrolls down), true: natural
+#define TWO_FINGER_TAP_MS       250      // Max duration for 2-finger tap (right click) (ms)
+#define TWO_FINGER_MAX_DIST_PX  10       // Max movement distance for 2-finger tap (px)
+#define MULTITOUCH_COOLDOWN_MS  120      // Cooldown after 2-finger release to prevent phantom 1-finger click (ms)
 
 // Long Press Duration (Center Touch Button -> Settings)
 #define BTN_HOLD_SETTINGS_MS   750      // Milliseconds of hold required
