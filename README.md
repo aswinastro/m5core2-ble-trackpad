@@ -104,6 +104,7 @@ All configuration parameters are consolidated in [Config.h](file:///C:/Users/Asw
 | Setting | Default | Description |
 | :--- | :--- | :--- |
 | `BLE_DEVICE_NAME` | `"Core2-Trackpad"` | Advertised Bluetooth device name |
+| `DEFAULT_BRIGHTNESS_PCT` | `70` | Screen brightness percentage (0-100%) via AXP192 PMU |
 | `DEFAULT_SENSITIVITY` | `2.2f` | Cursor tracking speed multiplier |
 | `ACCEL_FACTOR` | `1.6f` | Kinetic acceleration multiplier for fast swipes |
 | `DEAD_ZONE_PX` | `1` | Anti-jitter deadband threshold in pixels |
@@ -120,6 +121,9 @@ All configuration parameters are consolidated in [Config.h](file:///C:/Users/Asw
 ---
 
 ## 📜 Version & Feature Changelog
+
+### v2.6.1 - Display Brightness Calibration
+- **Set Default Brightness to 70%**: Calibrated the AXP192 LCD backlight voltage (`3030 mV`) for optimal visual clarity, cyberpunk contrast, and battery longevity.
 
 ### v2.6.0 - Long-Press Select & Drag
 - **Added Long-Press Select & Drag**: Press and hold finger in place on the trackpad for 400ms to latch Left Click down with a solid 40ms haptic buzz, then drag to select text or drag windows. Automatically unlatches on release with haptic confirmation.

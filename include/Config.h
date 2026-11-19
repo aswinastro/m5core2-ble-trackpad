@@ -9,9 +9,10 @@
 #define BLE_DEVICE_NAME        "Core2-Trackpad"
 #define BLE_MANUFACTURER_NAME  "M5Stack CyberCorp"
 
-// Screen Dimensions
+// Screen Dimensions & Display Tuning
 #define SCREEN_WIDTH           320
 #define SCREEN_HEIGHT          240
+#define DEFAULT_BRIGHTNESS_PCT 70       // Default screen brightness percentage (0-100%)
 
 // UI Layout Coordinates
 #define TOP_BAR_HEIGHT         28

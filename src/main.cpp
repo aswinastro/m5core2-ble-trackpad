@@ -476,22 +476,25 @@ void setup() {
     M5.begin(true, true, true, true); // LCD, SD, Serial, I2C
     Serial.println(F("[SYSTEM] M5Stack Core2 BLE Cyberpunk Mouse Initializing..."));
 
-    // 2. Initialize haptic motor (AXP192 LDO3)
+    // 2. Set screen brightness (70%)
+    M5.Axp.SetLcdVoltage((uint16_t)map(DEFAULT_BRIGHTNESS_PCT, 0, 100, 2400, 3300));
+
+    // 3. Initialize haptic motor (AXP192 LDO3)
     M5.Axp.SetLDOVoltage(3, 3300); // 3.3V for motor
     M5.Axp.SetLDOEnable(3, false);
     triggerHaptic(80);
 
-    // 3. Obtain BT MAC address & battery stats
+    // 4. Obtain BT MAC address & battery stats
     readBtMacAddress();
     updateBatteryTelemetry();
 
-    // 4. Start BLE Mouse
+    // 5. Start BLE Mouse
     if (bleEnabled) {
         bleMouse.begin();
         Serial.printf("[BLE] Advertising as '%s' (MAC: %s)\n", BLE_DEVICE_NAME, btMacStr);
     }
 
-    // 5. Initialize Cyberpunk UI
+    // 6. Initialize Cyberpunk UI
     switchToMode(MODE_TRACKPAD);
 }
 
