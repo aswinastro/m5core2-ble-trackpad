@@ -286,6 +286,17 @@ void handleTrackpadTouch() {
                     hasMovedBeyondTap = true;
                 }
 
+                // Check for Long-Press Select & Drag (holding still before dragging)
+                if (!isDragging && !hasMovedBeyondTap) {
+                    if (millis() - touchStartTime >= LONG_PRESS_DRAG_MS) {
+                        isDragging = true;
+                        if (bleMouse.isConnected()) {
+                            bleMouse.press(MOUSE_LEFT);
+                        }
+                        triggerHaptic(40);
+                    }
+                }
+
                 if (abs(dx) >= DEAD_ZONE_PX || abs(dy) >= DEAD_ZONE_PX) {
                     float dist = sqrtf((float)(dx * dx + dy * dy));
                     float speedMultiplier = DEFAULT_SENSITIVITY;

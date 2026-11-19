@@ -32,6 +32,7 @@
 #define TAP_MIN_DURATION_MS     25       // Min duration to reject electrical noise (ms)
 #define TAP_MAX_DISTANCE_PX     8        // Max movement radius allowed for a tap (px)
 #define TAP_TO_DRAG_TIMEOUT_MS  300      // Max interval between 1st tap release and 2nd tap down for drag (ms)
+#define LONG_PRESS_DRAG_MS      400      // Hold duration to latch Left Click for select & drag (ms)
 #define SCROLL_SENSITIVITY      0.22f    // Multiplier for 2-finger scroll steps
 #define SCROLL_INVERT           false    // false: traditional (finger down scrolls down), true: natural
 #define TWO_FINGER_TAP_MS       250      // Max duration for 2-finger tap (right click) (ms)

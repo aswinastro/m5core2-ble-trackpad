@@ -14,7 +14,8 @@ A high-performance, ultra-responsive Bluetooth Low Energy (BLE) HID trackpad and
 - **Laptop Trackpad Gestures**:
   - **1-Finger Drag**: Smooth cursor navigation with kinetic velocity curve.
   - **1-Finger Tap**: Left Mouse Click (`bleMouse.click(MOUSE_LEFT)`) with 20ms haptic feedback.
-  - **Double-Tap & Drag**: Tap then quickly tap-and-hold to drag windows, select text, or move objects with Left Click held down. Automatically releases on finger lift with haptic pulse.
+  - **Long-Press Select & Drag**: Press and hold in place for 400ms to lock Left Click down (confirmed with a solid 40ms haptic pulse), then drag to highlight text, move windows, or reposition items. Automatically releases on finger lift with haptic feedback.
+  - **Double-Tap & Drag**: Tap then quickly tap-and-hold to drag with Left Click held down. Automatically releases on finger lift with haptic pulse.
   - **2-Finger Scroll**: Natural two-finger vertical and horizontal scrolling (`bleMouse.move(0, 0, wheel, hWheel)`).
   - **2-Finger Tap**: Right Mouse Click (`bleMouse.click(MOUSE_RIGHT)`) with distinct 30ms haptic confirmation.
   - **Anti-Phantom Multi-Touch Filter**: Intelligent cooldown prevents false single-finger clicks or cursor jumps when lifting two fingers.
@@ -109,6 +110,7 @@ All configuration parameters are consolidated in [Config.h](file:///C:/Users/Asw
 | `TAP_MAX_DURATION_MS` | `250` | Maximum touch duration (ms) for tap detection |
 | `TAP_MAX_DISTANCE_PX` | `8` | Maximum movement radius (px) permitted during tap |
 | `TAP_TO_DRAG_TIMEOUT_MS` | `300` | Double-tap interval (ms) to trigger Left Click drag |
+| `LONG_PRESS_DRAG_MS` | `400` | Hold duration (ms) to latch Left Click for select & drag |
 | `SCROLL_SENSITIVITY` | `0.22f` | Two-finger scroll rate multiplier |
 | `SCROLL_INVERT` | `false` | Traditional vs natural two-finger scroll inversion |
 | `TWO_FINGER_TAP_MS` | `250` | Two-finger tap duration (ms) for Right Click |
@@ -118,6 +120,10 @@ All configuration parameters are consolidated in [Config.h](file:///C:/Users/Asw
 ---
 
 ## 📜 Version & Feature Changelog
+
+### v2.6.0 - Long-Press Select & Drag
+- **Added Long-Press Select & Drag**: Press and hold finger in place on the trackpad for 400ms to latch Left Click down with a solid 40ms haptic buzz, then drag to select text or drag windows. Automatically unlatches on release with haptic confirmation.
+- **Enhanced Anti-Jitter Hold**: Suppresses micro-jitter while holding still for long press to prevent premature cursor displacement.
 
 ### v2.5.0 - Laptop Trackpad Gestures & Full-Screen Touch
 - **Added 2-Finger Scrolling**: Smooth vertical & horizontal scrolling using natural two-finger swipe gestures.
